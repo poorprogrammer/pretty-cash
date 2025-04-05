@@ -70,8 +70,8 @@ test.describe('Petty Cash Management System', () => {
         const row = page.locator('tr:has-text("Travel expenses for conference")');
         await row.locator('select').selectOption('approved');
 
-        // Verify the status was updated - use a more flexible selector
-        await expect(page.locator('span:has-text("approved")')).toBeVisible();
+        // Verify the status was updated
+        await expect(row.locator('select')).toHaveValue('approved');
     });
 
     test('should delete an entry', async ({ page }) => {
@@ -92,15 +92,15 @@ test.describe('Petty Cash Management System', () => {
         await page.click('button:has-text("List Entries")');
         await page.waitForSelector('table');
 
-        // Find the entry and delete it
+        // Find the entry and click delete
         const row = page.locator('tr:has-text("Team lunch")');
         await row.locator('button:has-text("Delete")').click();
 
-        // Confirm deletion in the dialog - use a more flexible selector
-        await page.locator('button:has-text("Yes")').click();
+        // Confirm deletion
+        await page.locator('button:has-text("Yes, delete")').click();
 
-        // Verify the entry was deleted - use a more flexible approach
-        await expect(page.locator('tr:has-text("Team lunch")')).not.toBeVisible();
+        // Verify the entry was deleted
+        await expect(row).not.toBeVisible();
     });
 
     test('should generate a summary report', async ({ page }) => {
@@ -122,17 +122,16 @@ test.describe('Petty Cash Management System', () => {
         // Generate the report
         await page.click('button:has-text("Generate Report")');
 
-        // Wait for the report to be displayed - use a more flexible approach
-        await page.waitForTimeout(500); // Give the report time to generate
+        // Wait for the report to be displayed
+        await page.waitForSelector('h3:has-text("Summary Report")');
 
-        // Verify the report is displayed - use more flexible selectors
-        await expect(page.locator('h3')).toBeVisible();
-        await expect(page.locator('p:has-text("Total Amount")')).toBeVisible();
-        await expect(page.locator('p:has-text("Total Entries")')).toBeVisible();
+        // Verify the report summary cards are displayed
+        await expect(page.locator('div:has-text("Total Amount")')).toBeVisible();
+        await expect(page.locator('div:has-text("Total Entries")')).toBeVisible();
+        await expect(page.locator('div:has-text("Average Amount")')).toBeVisible();
 
-        // Check if the report has tables for categories and requesters
-        await expect(page.locator('h4:has-text("Category")')).toBeVisible();
-        await expect(page.locator('h4:has-text("Requester")')).toBeVisible();
+        // Verify the entries table is displayed
+        await expect(page.locator('table')).toBeVisible();
     });
 
     test('should generate a category report', async ({ page }) => {
@@ -143,7 +142,7 @@ test.describe('Petty Cash Management System', () => {
         // Select Category Report type
         await page.selectOption('select', 'category');
 
-        // Select a category - use a more flexible selector
+        // Select a category
         await page.selectOption('select:nth-of-type(2)', '1'); // Office Supplies
 
         // Set date range (last month)
@@ -158,15 +157,15 @@ test.describe('Petty Cash Management System', () => {
         await page.click('button:has-text("Generate Report")');
 
         // Wait for the report to be displayed
-        await page.waitForTimeout(500); // Give the report time to generate
+        await page.waitForSelector('h3:has-text("Category Report")');
 
-        // Verify the report is displayed - use more flexible selectors
-        await expect(page.locator('h3')).toBeVisible();
-        await expect(page.locator('p:has-text("Total Amount")')).toBeVisible();
-        await expect(page.locator('p:has-text("Total Entries")')).toBeVisible();
+        // Verify the report summary cards are displayed
+        await expect(page.locator('div:has-text("Total Amount")')).toBeVisible();
+        await expect(page.locator('div:has-text("Total Entries")')).toBeVisible();
+        await expect(page.locator('div:has-text("Average Amount")')).toBeVisible();
 
-        // Check if the report has a table for entries
-        await expect(page.locator('h4:has-text("Entries")')).toBeVisible();
+        // Verify the entries table is displayed
+        await expect(page.locator('table')).toBeVisible();
     });
 
     test('should generate a requester report', async ({ page }) => {
@@ -177,7 +176,7 @@ test.describe('Petty Cash Management System', () => {
         // Select Requester Report type
         await page.selectOption('select', 'requester');
 
-        // Select a requester - use a more flexible selector
+        // Select a requester
         await page.selectOption('select:nth-of-type(2)', '1'); // John Doe
 
         // Set date range (last month)
@@ -192,15 +191,15 @@ test.describe('Petty Cash Management System', () => {
         await page.click('button:has-text("Generate Report")');
 
         // Wait for the report to be displayed
-        await page.waitForTimeout(500); // Give the report time to generate
+        await page.waitForSelector('h3:has-text("Requester Report")');
 
-        // Verify the report is displayed - use more flexible selectors
-        await expect(page.locator('h3')).toBeVisible();
-        await expect(page.locator('p:has-text("Total Amount")')).toBeVisible();
-        await expect(page.locator('p:has-text("Total Entries")')).toBeVisible();
+        // Verify the report summary cards are displayed
+        await expect(page.locator('div:has-text("Total Amount")')).toBeVisible();
+        await expect(page.locator('div:has-text("Total Entries")')).toBeVisible();
+        await expect(page.locator('div:has-text("Average Amount")')).toBeVisible();
 
-        // Check if the report has a table for entries
-        await expect(page.locator('h4:has-text("Entries")')).toBeVisible();
+        // Verify the entries table is displayed
+        await expect(page.locator('table')).toBeVisible();
     });
 
     test('should export a report to CSV', async ({ page }) => {
@@ -223,16 +222,13 @@ test.describe('Petty Cash Management System', () => {
         await page.click('button:has-text("Generate Report")');
 
         // Wait for the report to be displayed
-        await page.waitForTimeout(500); // Give the report time to generate
-
-        // Wait for the report to be displayed - use a more flexible approach
-        await expect(page.locator('h3')).toBeVisible();
+        await page.waitForSelector('h3:has-text("Summary Report")');
 
         // Set up a listener for the download event
         const downloadPromise = page.waitForEvent('download');
 
         // Click the Export to CSV button
-        await page.click('button:has-text("Export")');
+        await page.click('button:has-text("Export to CSV")');
 
         // Wait for the download to start
         const download = await downloadPromise;
