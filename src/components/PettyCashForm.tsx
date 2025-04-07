@@ -27,21 +27,25 @@ export default function PettyCashForm() {
 
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<boolean>(false);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setSuccess(false);
+        setIsSubmitting(true);
 
         try {
             // Validate form data
             if (!formData.category) {
                 setError('Please select a category');
+                setIsSubmitting(false);
                 return;
             }
 
             if (!formData.requester) {
                 setError('Please select a requester');
+                setIsSubmitting(false);
                 return;
             }
 
@@ -50,6 +54,7 @@ export default function PettyCashForm() {
 
             if (!selectedCategory || !selectedRequester) {
                 setError('Invalid category or requester');
+                setIsSubmitting(false);
                 return;
             }
 
@@ -79,6 +84,8 @@ export default function PettyCashForm() {
         } catch (err) {
             setError('Failed to create entry');
             console.error(err);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -88,7 +95,7 @@ export default function PettyCashForm() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-4">
+        <div className="w-full max-w-2xl mx-auto p-4">
             <h2 className="text-xl font-bold mb-4">New Petty Cash Entry</h2>
 
             {error && (
@@ -103,8 +110,8 @@ export default function PettyCashForm() {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6 border border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-4 sm:p-6 border border-gray-200">
+                <div className="space-y-4 mb-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Date <span className="text-red-500">*</span>
@@ -115,7 +122,7 @@ export default function PettyCashForm() {
                             value={formData.date}
                             onChange={handleChange}
                             required
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900 h-10 px-3 py-2"
                         />
                     </div>
 
@@ -132,27 +139,26 @@ export default function PettyCashForm() {
                             min="0"
                             step="0.01"
                             placeholder="0.00"
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900 h-10 px-3 py-2"
+                            inputMode="decimal"
                         />
                     </div>
-                </div>
 
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Description <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleChange}
-                        required
-                        placeholder="Brief description of the expense"
-                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
-                    />
-                </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Description <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                            required
+                            placeholder="Brief description of the expense"
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900 h-10 px-3 py-2"
+                        />
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Category <span className="text-red-500">*</span>
@@ -162,7 +168,7 @@ export default function PettyCashForm() {
                             value={formData.category}
                             onChange={handleChange}
                             required
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900 h-10 px-3 py-2"
                         >
                             <option value="">Select a category</option>
                             {mockCategories.map(category => (
@@ -182,7 +188,7 @@ export default function PettyCashForm() {
                             value={formData.requester}
                             onChange={handleChange}
                             required
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900 h-10 px-3 py-2"
                         >
                             <option value="">Select a requester</option>
                             {mockRequesters.map(requester => (
@@ -192,28 +198,29 @@ export default function PettyCashForm() {
                             ))}
                         </select>
                     </div>
-                </div>
 
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Notes
-                    </label>
-                    <textarea
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleChange}
-                        rows={3}
-                        placeholder="Additional notes or details"
-                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
-                    ></textarea>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Notes
+                        </label>
+                        <textarea
+                            name="notes"
+                            value={formData.notes}
+                            onChange={handleChange}
+                            rows={3}
+                            placeholder="Additional notes or details"
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900 px-3 py-2"
+                        ></textarea>
+                    </div>
                 </div>
 
                 <div className="flex justify-end">
                     <button
                         type="submit"
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        disabled={isSubmitting}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 w-full sm:w-auto text-base font-medium"
                     >
-                        Submit
+                        {isSubmitting ? 'Submitting...' : 'Submit'}
                     </button>
                 </div>
             </form>
