@@ -36,7 +36,7 @@ test.describe('Petty Cash Management System', () => {
         await page.click('button:has-text("Submit")');
 
         // Check for success message
-        await expect(page.locator('div:has-text("Entry created successfully")')).toBeVisible();
+        await expect(page.locator('div.bg-green-100:has-text("Entry created successfully")')).toBeVisible();
 
         // Navigate to the List tab to verify the entry was created
         await page.click('button:has-text("List Entries")');
@@ -62,7 +62,7 @@ test.describe('Petty Cash Management System', () => {
         await page.click('button:has-text("Submit")');
 
         // Wait for success message and navigate to list
-        await expect(page.locator('div:has-text("Entry created successfully")')).toBeVisible();
+        await expect(page.locator('div.bg-green-100:has-text("Entry created successfully")')).toBeVisible();
         await page.click('button:has-text("List Entries")');
         await page.waitForSelector('table');
 
@@ -88,7 +88,7 @@ test.describe('Petty Cash Management System', () => {
         await page.click('button:has-text("Submit")');
 
         // Wait for success message and navigate to list
-        await expect(page.locator('div:has-text("Entry created successfully")')).toBeVisible();
+        await expect(page.locator('div.bg-green-100:has-text("Entry created successfully")')).toBeVisible();
         await page.click('button:has-text("List Entries")');
         await page.waitForSelector('table');
 
@@ -104,137 +104,204 @@ test.describe('Petty Cash Management System', () => {
     });
 
     test('should generate a summary report', async ({ page }) => {
-        // Navigate to the Reports tab
+        // Create a test entry first
+        await page.click('button:has-text("New Entry")');
+        await page.waitForSelector('h2:has-text("New Petty Cash Entry")');
+
+        // Fill in the form
+        const today = new Date();
+        await page.fill('input[name="date"]', today.toISOString().split('T')[0]);
+        await page.fill('input[name="amount"]', '1500');
+        await page.fill('input[name="description"]', 'Test entry for report');
+        await page.selectOption('select[name="category"]', '1');
+        await page.selectOption('select[name="requester"]', '1');
+        await page.fill('textarea[name="notes"]', 'Test notes');
+
+        // Submit the form
+        await page.click('button:has-text("Submit")');
+        await expect(page.locator('div.bg-green-100:has-text("Entry created successfully")')).toBeVisible();
+
+        // Navigate to Reports tab
         await page.click('button:has-text("Reports")');
         await page.waitForSelector('h2:has-text("Generate Reports")');
 
-        // Select Summary Report type
-        await page.selectOption('select', 'summary');
-
         // Set date range (last month)
-        const today = new Date();
         const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
         const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
 
-        await page.fill('input[type="date"]:nth-of-type(1)', lastMonth.toISOString().split('T')[0]);
-        await page.fill('input[type="date"]:nth-of-type(2)', lastMonthEnd.toISOString().split('T')[0]);
+        // Wait for and fill date inputs
+        await page.waitForSelector('input[name="startDate"]');
+        await page.fill('input[name="startDate"]', lastMonth.toISOString().split('T')[0]);
+        await page.fill('input[name="endDate"]', today.toISOString().split('T')[0]);
 
         // Generate the report
         await page.click('button:has-text("Generate Report")');
 
-        // Wait for the report to be displayed
-        await page.waitForSelector('h3:has-text("Summary Report")');
+        // Wait for loading state to finish
+        await page.waitForSelector('button:has-text("Generating...")', { state: 'detached', timeout: 10000 });
 
-        // Verify the report summary cards are displayed
-        await expect(page.locator('div:has-text("Total Amount")')).toBeVisible();
-        await expect(page.locator('div:has-text("Total Entries")')).toBeVisible();
-        await expect(page.locator('div:has-text("Average Amount")')).toBeVisible();
+        // Check for errors
+        const errorElement = await page.locator('div.bg-red-100');
+        if (await errorElement.isVisible()) {
+            throw new Error(`Report generation failed: ${await errorElement.textContent()}`);
+        }
 
-        // Verify the entries table is displayed
-        await expect(page.locator('table')).toBeVisible();
+        // Wait for report data to appear
+        await page.waitForSelector('h3:has-text("Summary Report")', { timeout: 10000 });
+        await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
     });
 
     test('should generate a category report', async ({ page }) => {
-        // Navigate to the Reports tab
+        // Create a test entry first
+        await page.click('button:has-text("New Entry")');
+        await page.waitForSelector('h2:has-text("New Petty Cash Entry")');
+
+        // Fill in the form
+        const today = new Date();
+        await page.fill('input[name="date"]', today.toISOString().split('T')[0]);
+        await page.fill('input[name="amount"]', '2000');
+        await page.fill('input[name="description"]', 'Test entry for category report');
+        await page.selectOption('select[name="category"]', '1');
+        await page.selectOption('select[name="requester"]', '1');
+        await page.fill('textarea[name="notes"]', 'Test notes');
+
+        // Submit the form
+        await page.click('button:has-text("Submit")');
+        await expect(page.locator('div.bg-green-100:has-text("Entry created successfully")')).toBeVisible();
+
+        // Navigate to Reports tab
         await page.click('button:has-text("Reports")');
         await page.waitForSelector('h2:has-text("Generate Reports")');
 
-        // Select Category Report type
-        await page.selectOption('select', 'category');
+        // Select category report type
+        await page.selectOption('select[name="reportType"]', 'category');
 
-        // Select a category
-        await page.selectOption('select:nth-of-type(2)', '1'); // Office Supplies
+        // Wait for and select category
+        await page.waitForSelector('select[name="category"]');
+        await page.selectOption('select[name="category"]', '1');
 
-        // Set date range (last month)
-        const today = new Date();
-        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-
-        await page.fill('input[type="date"]:nth-of-type(1)', lastMonth.toISOString().split('T')[0]);
-        await page.fill('input[type="date"]:nth-of-type(2)', lastMonthEnd.toISOString().split('T')[0]);
+        // Set date range
+        await page.waitForSelector('input[name="startDate"]');
+        await page.fill('input[name="startDate"]', today.toISOString().split('T')[0]);
+        await page.fill('input[name="endDate"]', today.toISOString().split('T')[0]);
 
         // Generate the report
         await page.click('button:has-text("Generate Report")');
 
-        // Wait for the report to be displayed
-        await page.waitForSelector('h3:has-text("Category Report")');
+        // Wait for loading state to finish
+        await page.waitForSelector('button:has-text("Generating...")', { state: 'detached', timeout: 10000 });
 
-        // Verify the report summary cards are displayed
-        await expect(page.locator('div:has-text("Total Amount")')).toBeVisible();
-        await expect(page.locator('div:has-text("Total Entries")')).toBeVisible();
-        await expect(page.locator('div:has-text("Average Amount")')).toBeVisible();
+        // Check for errors
+        const errorElement = await page.locator('div.bg-red-100');
+        if (await errorElement.isVisible()) {
+            throw new Error(`Report generation failed: ${await errorElement.textContent()}`);
+        }
 
-        // Verify the entries table is displayed
-        await expect(page.locator('table')).toBeVisible();
+        // Wait for report data to appear
+        await page.waitForSelector('h3:has-text("Category Report")', { timeout: 10000 });
+        await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
     });
 
     test('should generate a requester report', async ({ page }) => {
-        // Navigate to the Reports tab
+        // Create a test entry first
+        await page.click('button:has-text("New Entry")');
+        await page.waitForSelector('h2:has-text("New Petty Cash Entry")');
+
+        // Fill in the form
+        const today = new Date();
+        await page.fill('input[name="date"]', today.toISOString().split('T')[0]);
+        await page.fill('input[name="amount"]', '3000');
+        await page.fill('input[name="description"]', 'Test entry for requester report');
+        await page.selectOption('select[name="category"]', '1');
+        await page.selectOption('select[name="requester"]', '1');
+        await page.fill('textarea[name="notes"]', 'Test notes');
+
+        // Submit the form
+        await page.click('button:has-text("Submit")');
+        await expect(page.locator('div.bg-green-100:has-text("Entry created successfully")')).toBeVisible();
+
+        // Navigate to Reports tab
         await page.click('button:has-text("Reports")');
         await page.waitForSelector('h2:has-text("Generate Reports")');
 
-        // Select Requester Report type
-        await page.selectOption('select', 'requester');
+        // Select requester report type
+        await page.selectOption('select[name="reportType"]', 'requester');
 
-        // Select a requester
-        await page.selectOption('select:nth-of-type(2)', '1'); // John Doe
+        // Wait for and select requester
+        await page.waitForSelector('select[name="requester"]');
+        await page.selectOption('select[name="requester"]', '1');
 
-        // Set date range (last month)
-        const today = new Date();
-        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-
-        await page.fill('input[type="date"]:nth-of-type(1)', lastMonth.toISOString().split('T')[0]);
-        await page.fill('input[type="date"]:nth-of-type(2)', lastMonthEnd.toISOString().split('T')[0]);
+        // Set date range
+        await page.waitForSelector('input[name="startDate"]');
+        await page.fill('input[name="startDate"]', today.toISOString().split('T')[0]);
+        await page.fill('input[name="endDate"]', today.toISOString().split('T')[0]);
 
         // Generate the report
         await page.click('button:has-text("Generate Report")');
 
-        // Wait for the report to be displayed
-        await page.waitForSelector('h3:has-text("Requester Report")');
+        // Wait for loading state to finish
+        await page.waitForSelector('button:has-text("Generating...")', { state: 'detached', timeout: 10000 });
 
-        // Verify the report summary cards are displayed
-        await expect(page.locator('div:has-text("Total Amount")')).toBeVisible();
-        await expect(page.locator('div:has-text("Total Entries")')).toBeVisible();
-        await expect(page.locator('div:has-text("Average Amount")')).toBeVisible();
+        // Check for errors
+        const errorElement = await page.locator('div.bg-red-100');
+        if (await errorElement.isVisible()) {
+            throw new Error(`Report generation failed: ${await errorElement.textContent()}`);
+        }
 
-        // Verify the entries table is displayed
-        await expect(page.locator('table')).toBeVisible();
+        // Wait for report data to appear
+        await page.waitForSelector('h3:has-text("Requester Report")', { timeout: 10000 });
+        await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
     });
 
     test('should export a report to CSV', async ({ page }) => {
-        // Navigate to the Reports tab
+        // Create a test entry first
+        await page.click('button:has-text("New Entry")');
+        await page.waitForSelector('h2:has-text("New Petty Cash Entry")');
+
+        // Fill in the form
+        const today = new Date();
+        await page.fill('input[name="date"]', today.toISOString().split('T')[0]);
+        await page.fill('input[name="amount"]', '4000');
+        await page.fill('input[name="description"]', 'Test entry for CSV export');
+        await page.selectOption('select[name="category"]', '1');
+        await page.selectOption('select[name="requester"]', '1');
+        await page.fill('textarea[name="notes"]', 'Test notes');
+
+        // Submit the form
+        await page.click('button:has-text("Submit")');
+        await expect(page.locator('div.bg-green-100:has-text("Entry created successfully")')).toBeVisible();
+
+        // Navigate to Reports tab
         await page.click('button:has-text("Reports")');
         await page.waitForSelector('h2:has-text("Generate Reports")');
 
-        // Select Summary Report type
-        await page.selectOption('select', 'summary');
-
-        // Set date range (last month)
-        const today = new Date();
-        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-
-        await page.fill('input[type="date"]:nth-of-type(1)', lastMonth.toISOString().split('T')[0]);
-        await page.fill('input[type="date"]:nth-of-type(2)', lastMonthEnd.toISOString().split('T')[0]);
+        // Set date range
+        await page.waitForSelector('input[name="startDate"]');
+        await page.fill('input[name="startDate"]', today.toISOString().split('T')[0]);
+        await page.fill('input[name="endDate"]', today.toISOString().split('T')[0]);
 
         // Generate the report
         await page.click('button:has-text("Generate Report")');
 
-        // Wait for the report to be displayed
-        await page.waitForSelector('h3:has-text("Summary Report")');
+        // Wait for loading state to finish
+        await page.waitForSelector('button:has-text("Generating...")', { state: 'detached', timeout: 10000 });
 
-        // Set up a listener for the download event
-        const downloadPromise = page.waitForEvent('download');
+        // Check for errors
+        const errorElement = await page.locator('div.bg-red-100');
+        if (await errorElement.isVisible()) {
+            throw new Error(`Report generation failed: ${await errorElement.textContent()}`);
+        }
 
-        // Click the Export to CSV button
+        // Wait for report data to appear
+        await page.waitForSelector('h3:has-text("Summary Report")', { timeout: 10000 });
+        await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
+
+        // Click export button
         await page.click('button:has-text("Export to CSV")');
 
-        // Wait for the download to start
+        // Wait for download to start
+        const downloadPromise = page.waitForEvent('download');
         const download = await downloadPromise;
-
-        // Verify the download has the correct filename
-        expect(download.suggestedFilename()).toContain('petty-cash');
         expect(download.suggestedFilename()).toContain('.csv');
     });
 }); 

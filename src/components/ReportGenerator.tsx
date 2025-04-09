@@ -86,6 +86,7 @@ export default function ReportGenerator() {
                             Report Type
                         </label>
                         <select
+                            name="reportType"
                             value={reportType}
                             onChange={(e) => setReportType(e.target.value as 'summary' | 'category' | 'requester')}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
@@ -102,6 +103,7 @@ export default function ReportGenerator() {
                                 Category
                             </label>
                             <select
+                                name="category"
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
@@ -122,6 +124,7 @@ export default function ReportGenerator() {
                                 Requester
                             </label>
                             <select
+                                name="requester"
                                 value={selectedRequester}
                                 onChange={(e) => setSelectedRequester(e.target.value)}
                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
@@ -143,6 +146,7 @@ export default function ReportGenerator() {
                             Start Date
                         </label>
                         <input
+                            name="startDate"
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
@@ -155,6 +159,7 @@ export default function ReportGenerator() {
                             End Date
                         </label>
                         <input
+                            name="endDate"
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
